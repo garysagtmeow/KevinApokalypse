@@ -7,9 +7,20 @@ const BRAND_BG = { r: 242, g: 228, b: 200, alpha: 1 };
 const SOURCE_LOGO = path.join(__dirname, '../assets/game/ui/app-logo.png');
 const OUTPUT_DIR = path.join(__dirname, '../public');
 
-async function createIcon(size) {
-  const logoSize = Math.round(size * 0.82);
-  const resizedLogo = await sharp(SOURCE_LOGO)
+/** Home-screen icons: logo should fill the tile. */
+const LOGO_SCALE_STANDARD = 0.97;
+
+/** Maskable Android icons keep extra padding inside the safe zone. */
+const LOGO_SCALE_MASKABLE = 0.82;
+
+async function loadTrimmedLogo() {
+  return sharp(SOURCE_LOGO).trim({ threshold: 12 }).png().toBuffer();
+}
+
+async function createIcon(size, logoScale) {
+  const trimmedLogo = await loadTrimmedLogo();
+  const logoSize = Math.round(size * logoScale);
+  const resizedLogo = await sharp(trimmedLogo)
     .resize(logoSize, logoSize, { fit: 'inside' })
     .toBuffer();
   const meta = await sharp(resizedLogo).metadata();
@@ -36,13 +47,18 @@ async function main() {
 
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
-  const icon192 = await createIcon(192);
-  const icon512 = await createIcon(512);
-  const appleTouchIcon = await createIcon(180);
+  const outputs = [
+    ['icon-192.png', 192, LOGO_SCALE_STANDARD],
+    ['icon-512.png', 512, LOGO_SCALE_STANDARD],
+    ['icon-maskable-512.png', 512, LOGO_SCALE_MASKABLE],
+    ['apple-touch-icon.png', 180, LOGO_SCALE_STANDARD],
+    ['apple-touch-icon-512.png', 512, LOGO_SCALE_STANDARD],
+  ];
 
-  await fs.promises.writeFile(path.join(OUTPUT_DIR, 'icon-192.png'), icon192);
-  await fs.promises.writeFile(path.join(OUTPUT_DIR, 'icon-512.png'), icon512);
-  await fs.promises.writeFile(path.join(OUTPUT_DIR, 'apple-touch-icon.png'), appleTouchIcon);
+  for (const [filename, size, scale] of outputs) {
+    const icon = await createIcon(size, scale);
+    await fs.promises.writeFile(path.join(OUTPUT_DIR, filename), icon);
+  }
 
   console.log('Generated PWA icons in public/');
 }
