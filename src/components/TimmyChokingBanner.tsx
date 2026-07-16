@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 
 type TimmyChokingBannerProps = {
   breathRemaining: number;
@@ -13,6 +13,11 @@ export function TimmyChokingBanner({ breathRemaining }: TimmyChokingBannerProps)
       <View style={styles.banner}>
         <Text style={styles.title}>TIMMY VERSCHLUCKT SICH!</Text>
         <Text style={styles.countdown}>Atem: {breathRemaining}s</Text>
+        {Platform.OS === 'web' && (
+          <Text selectable={false} style={styles.rescueHint}>
+            Orangen Kreis-Button 2 Sekunden gedrückt halten!
+          </Text>
+        )}
       </View>
     </View>
   );
@@ -70,5 +75,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     fontFamily: 'Courier',
+  },
+  rescueHint: {
+    marginTop: 6,
+    color: '#FFEB3B',
+    fontSize: 11,
+    fontWeight: '900',
+    fontFamily: 'Courier',
+    textAlign: 'center',
+    lineHeight: 15,
   },
 });

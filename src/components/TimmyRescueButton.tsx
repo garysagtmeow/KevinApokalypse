@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Image, Platform, StyleSheet, Text, View } from 'react-native';
 
-import { WEB_NO_SELECT_STYLE, WEB_PRESSABLE_PROPS } from '@/src/utils/web-no-select';
+import { HoldPressable } from '@/src/components/HoldPressable';
 
 type TimmyRescueButtonProps = {
   onHoldStart: () => void;
@@ -10,6 +10,27 @@ type TimmyRescueButtonProps = {
   holdProgress: number;
   showHoldProgress: boolean;
 };
+
+function getWebLabelUri(active: boolean): string {
+  const titleFill = active ? '#FFEB3B' : '#FFFFFF';
+  const hintFill = active ? '#FFFFFF' : 'rgba(255,255,255,0.95)';
+
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="78" height="30" role="img" aria-label="Timmy retten, 2 Sekunden gedrückt halten">
+  <text x="39" y="12" text-anchor="middle" fill="${titleFill}" font-family="Courier, monospace" font-size="10" font-weight="900">Timmy</text>
+  <text x="39" y="24" text-anchor="middle" fill="${hintFill}" font-family="Courier, monospace" font-size="7" font-weight="800">2s halten</text>
+</svg>`)}`;
+}
+
+function WebTimmyLabel({ active }: { active: boolean }) {
+  return (
+    <Image
+      source={{ uri: getWebLabelUri(active) }}
+      style={styles.webLabel}
+      accessible
+      accessibilityLabel="Timmy retten, 2 Sekunden gedrückt halten"
+    />
+  );
+}
 
 export function TimmyRescueButton({
   onHoldStart,
@@ -64,18 +85,16 @@ export function TimmyRescueButton({
           transform: [{ rotate: '-4deg' }, { scale: pulse }],
         },
       ]}>
-      <Pressable
-        {...WEB_PRESSABLE_PROPS}
-        onPressIn={onHoldStart}
-        onPressOut={onHoldEnd}
-        style={({ pressed }) => [
+      <HoldPressable
+        onHoldStart={onHoldStart}
+        onHoldEnd={onHoldEnd}
+        disabled={!active}
+        style={[
           styles.button,
-          WEB_NO_SELECT_STYLE,
           active ? styles.buttonActive : styles.buttonWaiting,
-          pressed && active && styles.buttonPressed,
         ]}>
         {showHoldProgress && (
-          <View style={styles.progressRing}>
+          <View style={styles.progressRing} pointerEvents="none">
             <View
               style={[
                 styles.progressFill,
@@ -84,13 +103,19 @@ export function TimmyRescueButton({
             />
           </View>
         )}
-        <Text selectable={false} style={[styles.label, active && styles.labelActive]}>
-          Timmy retten
-        </Text>
-        <Text selectable={false} style={[styles.hint, active && styles.hintActive]}>
-          (2s gedrückt halten)
-        </Text>
-      </Pressable>
+        {Platform.OS === 'web' ? (
+          <WebTimmyLabel active={active} />
+        ) : (
+          <>
+            <Text selectable={false} style={[styles.label, active && styles.labelActive]}>
+              Timmy retten
+            </Text>
+            <Text selectable={false} style={[styles.hint, active && styles.hintActive]}>
+              (2s gedrückt halten)
+            </Text>
+          </>
+        )}
+      </HoldPressable>
     </Animated.View>
   );
 }
@@ -124,9 +149,6 @@ const styles = StyleSheet.create({
     shadowColor: '#FF1744',
     shadowRadius: 14,
   },
-  buttonPressed: {
-    transform: [{ scale: 0.95 }],
-  },
   progressRing: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'flex-end',
@@ -135,6 +157,12 @@ const styles = StyleSheet.create({
   progressFill: {
     width: '100%',
     backgroundColor: 'rgba(255, 235, 59, 0.55)',
+  },
+  webLabel: {
+    width: 78,
+    height: 30,
+    zIndex: 1,
+    pointerEvents: 'none',
   },
   label: {
     color: '#FFF',
@@ -147,7 +175,6 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.35)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 0,
-    ...WEB_NO_SELECT_STYLE,
   },
   labelActive: {
     color: '#FFEB3B',
@@ -161,7 +188,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 9,
     zIndex: 1,
-    ...WEB_NO_SELECT_STYLE,
   },
   hintActive: {
     color: '#FFF',

@@ -38,6 +38,13 @@ export default function Root({ children }: PropsWithChildren) {
                 user-select: none;
                 -webkit-touch-callout: none;
               }
+              .hold-pressable, .hold-pressable * {
+                -webkit-user-select: none !important;
+                user-select: none !important;
+                -webkit-touch-callout: none !important;
+                -webkit-user-drag: none !important;
+                touch-action: none !important;
+              }
             `,
           }}
         />
