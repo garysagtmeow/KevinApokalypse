@@ -15,7 +15,7 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="description" content="Hilf Emi, Kevins Chaos in der Wohnung zu beseitigen!" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black" />
         <meta name="apple-mobile-web-app-title" content="Kevin" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -25,7 +25,7 @@ export default function Root({ children }: PropsWithChildren) {
             __html: `
               html, body, #root {
                 width: 100%;
-                height: 100%;
+                height: 100dvh;
                 overflow: hidden;
                 background-color: #F2E4C8;
                 touch-action: manipulation;

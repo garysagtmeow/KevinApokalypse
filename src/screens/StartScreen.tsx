@@ -3,8 +3,6 @@ import * as Haptics from 'expo-haptics';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { InstallWebAppHint } from '@/src/components/InstallWebAppHint';
-
 export function StartScreen() {
   const router = useRouter();
 
@@ -27,8 +25,6 @@ export function StartScreen() {
           <Text style={styles.startButtonText}>Spiel starten</Text>
         </Pressable>
       </View>
-
-      <InstallWebAppHint />
     </SafeAreaView>
   );
 }
