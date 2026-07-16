@@ -29,6 +29,8 @@ export default function Root({ children }: PropsWithChildren) {
                 overflow: hidden;
                 background-color: #F2E4C8;
                 touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+                -webkit-touch-callout: none;
               }
             `,
           }}

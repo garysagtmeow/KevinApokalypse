@@ -5,6 +5,7 @@ import {
   computeMiefRise,
   MIEF_COLLECT_RELIEF,
 } from '@/src/systems/mief-meter';
+import { IS_WEB, WEB_MIEF_TICK_MS } from '@/src/utils/platform-performance';
 
 const MAX_DELTA_SECONDS = 0.05;
 
@@ -22,6 +23,26 @@ export function useMiefMeter(
   useEffect(() => {
     if (!active) {
       return;
+    }
+
+    if (IS_WEB) {
+      const interval = setInterval(() => {
+        if (uncleanedPoopCount <= 0) {
+          return;
+        }
+
+        setMief((current) => {
+          if (current >= 100) {
+            return current;
+          }
+
+          return clampMief(
+            current + computeMiefRise(uncleanedPoopCount, WEB_MIEF_TICK_MS / 1000),
+          );
+        });
+      }, WEB_MIEF_TICK_MS);
+
+      return () => clearInterval(interval);
     }
 
     let frameId = 0;

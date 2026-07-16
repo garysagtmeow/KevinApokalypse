@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react';
-import { PanResponder, StyleSheet, View } from 'react-native';
+import { memo, useRef, useState } from 'react';
+import { PanResponder, Platform, StyleSheet, View } from 'react-native';
 
 import type { Vector2 } from '@/src/systems/movement';
+import { IS_WEB, WEB_POSITION_SYNC_MS } from '@/src/utils/platform-performance';
 
 const JOYSTICK_SIZE = 88;
 const KNOB_SIZE = 34;
@@ -11,10 +12,21 @@ type VirtualJoystickProps = {
   onDirectionChange: (direction: Vector2) => void;
 };
 
-export function VirtualJoystick({ onDirectionChange }: VirtualJoystickProps) {
+export const VirtualJoystick = memo(function VirtualJoystick({
+  onDirectionChange,
+}: VirtualJoystickProps) {
   const [knobOffset, setKnobOffset] = useState<Vector2>({ x: 0, y: 0 });
   const onDirectionChangeRef = useRef(onDirectionChange);
+  const lastKnobSyncRef = useRef(0);
   onDirectionChangeRef.current = onDirectionChange;
+
+  const updateKnob = (offset: Vector2) => {
+    const now = performance.now();
+    if (!IS_WEB || now - lastKnobSyncRef.current >= WEB_POSITION_SYNC_MS) {
+      lastKnobSyncRef.current = now;
+      setKnobOffset(offset);
+    }
+  };
 
   const panResponder = useRef(
     PanResponder.create({
@@ -27,25 +39,27 @@ export function VirtualJoystick({ onDirectionChange }: VirtualJoystickProps) {
         const x = Math.cos(angle) * clampedDistance;
         const y = Math.sin(angle) * clampedDistance;
 
-        setKnobOffset({ x, y });
+        updateKnob({ x, y });
         onDirectionChangeRef.current({
           x: x / MAX_RADIUS,
           y: y / MAX_RADIUS,
         });
       },
       onPanResponderRelease: () => {
-        setKnobOffset({ x: 0, y: 0 });
+        updateKnob({ x: 0, y: 0 });
         onDirectionChangeRef.current({ x: 0, y: 0 });
       },
       onPanResponderTerminate: () => {
-        setKnobOffset({ x: 0, y: 0 });
+        updateKnob({ x: 0, y: 0 });
         onDirectionChangeRef.current({ x: 0, y: 0 });
       },
     }),
   ).current;
 
   return (
-    <View style={styles.base} {...panResponder.panHandlers}>
+    <View
+      style={[styles.base, IS_WEB && styles.baseWeb]}
+      {...panResponder.panHandlers}>
       <View
         style={[
           styles.knob,
@@ -56,7 +70,7 @@ export function VirtualJoystick({ onDirectionChange }: VirtualJoystickProps) {
       />
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   base: {
@@ -70,6 +84,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     transform: [{ rotate: '-4deg' }],
   },
+  baseWeb: Platform.select({
+    web: {
+      touchAction: 'none',
+      userSelect: 'none',
+      cursor: 'grab',
+    } as object,
+    default: {},
+  }),
   knob: {
     width: KNOB_SIZE,
     height: KNOB_SIZE,

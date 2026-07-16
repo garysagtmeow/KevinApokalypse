@@ -1,23 +1,26 @@
 import { Image } from 'expo-image';
-import { StyleSheet, Text, View } from 'react-native';
+import { memo } from 'react';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 
 import { CHARACTER_VISUALS } from '@/src/entities/character-assets';
 import type { Vector2 } from '@/src/systems/movement';
 
 const KEVIN_VISUAL = CHARACTER_VISUALS.kevin;
 const KEVIN_SIZE = { width: 82, height: 118 };
+const IS_WEB = Platform.OS === 'web';
 
 type KevinProps = {
   position: Vector2;
   innocent?: boolean;
 };
 
-export function Kevin({ position, innocent = false }: KevinProps) {
+export const Kevin = memo(function Kevin({ position, innocent = false }: KevinProps) {
   return (
     <View
       style={[
         styles.wrapper,
         innocent && styles.wrapperInnocent,
+        IS_WEB && styles.wrapperWeb,
         {
           left: position.x - KEVIN_SIZE.width / 2,
           top: position.y - KEVIN_SIZE.height / 2,
@@ -36,7 +39,7 @@ export function Kevin({ position, innocent = false }: KevinProps) {
       {!innocent && <Text style={styles.label}>{KEVIN_VISUAL.label}</Text>}
     </View>
   );
-}
+});
 
 export const KEVIN_ENTITY_SIZE = KEVIN_SIZE;
 
@@ -48,6 +51,12 @@ const styles = StyleSheet.create({
     zIndex: 2,
     transform: [{ rotate: '-5deg' }],
   },
+  wrapperWeb: Platform.select({
+    web: {
+      willChange: 'transform, left, top',
+    } as object,
+    default: {},
+  }),
   wrapperInnocent: {
     transform: [{ rotate: '3deg' }, { scale: 0.96 }],
   },

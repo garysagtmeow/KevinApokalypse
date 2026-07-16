@@ -26,6 +26,7 @@ import {
   randomSpawnIntervalMs,
   randomUnitVector,
 } from '@/src/systems/kevin-ai';
+import { shouldSyncPosition } from '@/src/utils/platform-performance';
 
 const DEFAULT_KEVIN_SPEED = 110;
 const MAX_DELTA_SECONDS = 0.05;
@@ -232,6 +233,7 @@ export function useKevin(bounds: Bounds | null, options: UseKevinOptions) {
 
     let frameId = 0;
     let lastTime = performance.now();
+    let lastSyncTime = 0;
     let directionTimerMs = 0;
     let nextDirectionChangeMs = randomDirectionChangeMs() * directionChangeFactor;
     let spawnTimerMs = 0;
@@ -268,7 +270,10 @@ export function useKevin(bounds: Bounds | null, options: UseKevinOptions) {
         { top: 16, bottom: 12, left: 12, right: 12 },
       );
       positionRef.current = nextPosition;
-      setPosition(nextPosition);
+      if (shouldSyncPosition(lastSyncTime, now)) {
+        lastSyncTime = now;
+        setPosition(nextPosition);
+      }
 
       if (plantsRef?.current && onPlantKnockRef.current) {
         const timeSinceLastKnock = now - lastPlantKnockAtRef.current;
