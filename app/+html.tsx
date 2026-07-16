@@ -33,6 +33,11 @@ export default function Root({ children }: PropsWithChildren) {
                 -webkit-tap-highlight-color: transparent;
                 -webkit-touch-callout: none;
               }
+              [role="button"], button, a {
+                -webkit-user-select: none;
+                user-select: none;
+                -webkit-touch-callout: none;
+              }
             `,
           }}
         />

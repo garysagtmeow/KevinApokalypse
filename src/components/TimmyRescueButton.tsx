@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { WEB_NO_SELECT_STYLE, WEB_PRESSABLE_PROPS } from '@/src/utils/web-no-select';
+
 type TimmyRescueButtonProps = {
   onHoldStart: () => void;
   onHoldEnd: () => void;
@@ -63,10 +65,12 @@ export function TimmyRescueButton({
         },
       ]}>
       <Pressable
+        {...WEB_PRESSABLE_PROPS}
         onPressIn={onHoldStart}
         onPressOut={onHoldEnd}
         style={({ pressed }) => [
           styles.button,
+          WEB_NO_SELECT_STYLE,
           active ? styles.buttonActive : styles.buttonWaiting,
           pressed && active && styles.buttonPressed,
         ]}>
@@ -80,8 +84,12 @@ export function TimmyRescueButton({
             />
           </View>
         )}
-        <Text style={[styles.label, active && styles.labelActive]}>Timmy retten</Text>
-        <Text style={[styles.hint, active && styles.hintActive]}>(2s gedrückt halten)</Text>
+        <Text selectable={false} style={[styles.label, active && styles.labelActive]}>
+          Timmy retten
+        </Text>
+        <Text selectable={false} style={[styles.hint, active && styles.hintActive]}>
+          (2s gedrückt halten)
+        </Text>
       </Pressable>
     </Animated.View>
   );
@@ -139,6 +147,7 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.35)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 0,
+    ...WEB_NO_SELECT_STYLE,
   },
   labelActive: {
     color: '#FFEB3B',
@@ -152,6 +161,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 9,
     zIndex: 1,
+    ...WEB_NO_SELECT_STYLE,
   },
   hintActive: {
     color: '#FFF',

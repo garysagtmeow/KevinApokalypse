@@ -1,5 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { WEB_NO_SELECT_STYLE, WEB_PRESSABLE_PROPS } from '@/src/utils/web-no-select';
+
 type ActionButtonProps = {
   onPress?: () => void;
   onHoldStart?: () => void;
@@ -23,15 +25,19 @@ export function ActionButton({
 
   return (
     <Pressable
+      {...WEB_PRESSABLE_PROPS}
       onPress={useHold ? undefined : onPress}
       onPressIn={useHold ? onHoldStart : undefined}
       onPressOut={useHold ? onHoldEnd : undefined}
       style={({ pressed }) => [
         styles.button,
+        WEB_NO_SELECT_STYLE,
         active && styles.buttonActive,
         pressed && styles.buttonPressed,
       ]}>
-      <Text style={[styles.label, active && styles.labelActive]}>{label}</Text>
+      <Text selectable={false} style={[styles.label, active && styles.labelActive]}>
+        {label}
+      </Text>
       {showHoldBar && (
         <View style={styles.holdTrack}>
           <View style={[styles.holdFill, { width: `${Math.round(holdProgress * 100)}%` }]} />
@@ -73,6 +79,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Courier',
     letterSpacing: 1,
     textAlign: 'center',
+    ...WEB_NO_SELECT_STYLE,
   },
   labelActive: {
     color: '#FFEB3B',
