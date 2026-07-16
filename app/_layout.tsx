@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import 'react-native-reanimated';
 
 import { WebInstallBanner } from '@/src/components/WebInstallBanner';
+import { RotateToLandscapeHint } from '@/src/components/RotateToLandscapeHint';
 
 export default function RootLayout() {
   return (
@@ -20,6 +21,7 @@ export default function RootLayout() {
             <Stack.Screen name="bonus" options={{ headerShown: false }} />
           </Stack>
           <WebInstallBanner />
+          <RotateToLandscapeHint />
         </View>
         <StatusBar hidden />
       </ThemeProvider>
