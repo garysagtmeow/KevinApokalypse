@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, Image, StyleSheet, Text } from 'react-native';
 
 type CheeseWedgeProps = {
   x: number;
@@ -7,9 +7,30 @@ type CheeseWedgeProps = {
   kind: 'normal' | 'mega';
 };
 
+const NORMAL_SIZE = { width: 40, height: 36 };
+const MEGA_SIZE = { width: 56, height: 52 };
+
+const NORMAL_CHEESE_URI = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="40" height="36" viewBox="0 0 40 36">
+  <polygon points="20,2 36,34 4,34" fill="#FFC107"/>
+  <polygon points="20,8 30,30 10,30" fill="#FFE082" opacity="0.45"/>
+  <circle cx="20" cy="24" r="3" fill="#FFE082"/>
+</svg>`)}`;
+
+const MEGA_CHEESE_URI = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="56" height="52" viewBox="0 0 56 52">
+  <defs>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="2" flood-color="#FFD600" flood-opacity="0.85"/>
+    </filter>
+  </defs>
+  <polygon points="28,3 50,48 6,48" fill="#FFD54F" filter="url(#glow)"/>
+  <polygon points="28,10 42,42 14,42" fill="#FFF176" opacity="0.4"/>
+  <circle cx="28" cy="34" r="4" fill="#FFF59D"/>
+</svg>`)}`;
+
 export function CheeseWedge({ x, y, kind }: CheeseWedgeProps) {
   const pulse = useRef(new Animated.Value(1)).current;
   const isMega = kind === 'mega';
+  const size = isMega ? MEGA_SIZE : NORMAL_SIZE;
 
   useEffect(() => {
     if (!isMega) {
@@ -33,13 +54,20 @@ export function CheeseWedge({ x, y, kind }: CheeseWedgeProps) {
         styles.wrapper,
         isMega && styles.megaWrapper,
         {
-          left: x - (isMega ? 28 : 20),
-          top: y - (isMega ? 24 : 18),
+          left: x - size.width / 2,
+          top: y - size.height / 2,
+          width: size.width,
+          height: size.height,
           transform: isMega ? [{ scale: pulse }] : [{ rotate: '-8deg' }],
         },
       ]}>
-      <View style={[styles.wedge, isMega && styles.megaWedge]} />
-      <View style={[styles.wedgeHole, isMega && styles.megaHole]} />
+      <Image
+        source={{ uri: isMega ? MEGA_CHEESE_URI : NORMAL_CHEESE_URI }}
+        style={styles.image}
+        resizeMode="contain"
+        accessible
+        accessibilityLabel={isMega ? 'Mega-Käse' : 'Käse'}
+      />
       {isMega && <Text style={styles.megaLabel}>MEGA-KÄSE</Text>}
     </Animated.View>
   );
@@ -48,57 +76,18 @@ export function CheeseWedge({ x, y, kind }: CheeseWedgeProps) {
 const styles = StyleSheet.create({
   wrapper: {
     position: 'absolute',
-    width: 40,
-    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 3,
+    backgroundColor: 'transparent',
   },
   megaWrapper: {
-    width: 56,
-    height: 52,
     zIndex: 4,
   },
-  wedge: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 16,
-    borderRightWidth: 16,
-    borderBottomWidth: 28,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: '#FFC107',
-    transform: [{ rotate: '18deg' }],
-    shadowColor: '#F57F17',
-    shadowOffset: { width: 1, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 2,
-  },
-  megaWedge: {
-    borderLeftWidth: 22,
-    borderRightWidth: 22,
-    borderBottomWidth: 36,
-    borderBottomColor: '#FFD54F',
-    shadowColor: '#FFD600',
-    shadowOpacity: 0.9,
-    shadowRadius: 8,
-  },
-  wedgeHole: {
-    position: 'absolute',
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#FFE082',
-    top: 14,
-    left: 17,
-  },
-  megaHole: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#FFF59D',
-    top: 18,
-    left: 24,
+  image: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'transparent',
   },
   megaLabel: {
     position: 'absolute',
