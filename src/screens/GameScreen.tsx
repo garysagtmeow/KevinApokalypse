@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
+import { LayoutChangeEvent, StyleSheet, Text, View, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -193,12 +193,16 @@ export function GameScreen({ levelId = 1 }: { levelId?: LevelId }) {
     );
   }, [levelConfig, playAreaBounds, sessionKey]);
 
-  const emiPosition = usePlayerMovement(playAreaBounds, directionRef, {
-    entitySize: EMI_SIZE,
-    boundsInsets: EMI_BOUNDS_INSETS,
-    speed: 200,
-    resetKey: sessionKey,
-  });
+  const { interactionPoint: emiPosition, animatedStyle: emiAnimatedStyle } = usePlayerMovement(
+    playAreaBounds,
+    directionRef,
+    {
+      entitySize: EMI_SIZE,
+      boundsInsets: EMI_BOUNDS_INSETS,
+      speed: 200,
+      resetKey: sessionKey,
+    },
+  );
 
   const hasKnockedPlants = useMemo(() => plants.some((plant) => plant.knocked), [plants]);
   const hasKnockedBoxes = useMemo(() => boxes.some((box) => box.knocked), [boxes]);
@@ -373,7 +377,7 @@ export function GameScreen({ levelId = 1 }: { levelId?: LevelId }) {
     [],
   );
 
-  const kevinPosition = useKevin(playAreaBounds, {
+  const { animatedStyle: kevinAnimatedStyle } = useKevin(playAreaBounds, {
     resetKey: sessionKey,
     active: isPlaying,
     canSpawn: isPlaying && kevinDropCount < levelConfig.kevinPoopSpawns,
@@ -689,7 +693,7 @@ export function GameScreen({ levelId = 1 }: { levelId?: LevelId }) {
           <KevinKnast bounds={playAreaBounds} placement={kevinKnastPlacement} />
         )}
 
-        {playAreaBounds && <Kevin position={kevinPosition} />}
+        {playAreaBounds && <Kevin animatedStyle={kevinAnimatedStyle} />}
 
         {playAreaBounds && (
           <KevinKnastBars bounds={playAreaBounds} placement={kevinKnastPlacement} />
@@ -767,19 +771,18 @@ export function GameScreen({ levelId = 1 }: { levelId?: LevelId }) {
             ),
         )}
 
-        <StickFigure
-          {...EMI_VISUAL}
+        <Animated.View
           style={[
             styles.emiFigure,
-            {
-              opacity: playAreaBounds ? 1 : 0,
-              left: emiPosition.x - EMI_SIZE.width / 2,
-              top: emiPosition.y - EMI_SIZE.height / 2,
-              transform: [{ rotate: '-2deg' }],
-            },
-          ]}
-          headTilt={-4}
-        />
+            { opacity: playAreaBounds ? 1 : 0 },
+            emiAnimatedStyle,
+          ]}>
+          <StickFigure
+            {...EMI_VISUAL}
+            style={{ transform: [{ rotate: '-2deg' }] }}
+            headTilt={-4}
+          />
+        </Animated.View>
 
         <View style={styles.controlsOverlay} pointerEvents="box-none">
           <VirtualJoystick onDirectionChange={handleDirectionChange} />

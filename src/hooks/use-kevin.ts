@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
+import { Animated } from 'react-native';
 import type { RefObject } from 'react';
 
 import { KEVIN_ENTITY_SIZE } from '@/src/entities/Kevin';
@@ -26,7 +27,7 @@ import {
   randomSpawnIntervalMs,
   randomUnitVector,
 } from '@/src/systems/kevin-ai';
-import { shouldSyncPosition } from '@/src/utils/platform-performance';
+import type { PlayerMovementResult } from '@/src/hooks/use-player-movement';
 
 const DEFAULT_KEVIN_SPEED = 110;
 const MAX_DELTA_SECONDS = 0.05;
@@ -173,9 +174,18 @@ export function useKevin(bounds: Bounds | null, options: UseKevinOptions) {
     poopSpawnIntervalMinMs,
     poopSpawnIntervalMaxMs,
   } = options;
-  const [position, setPosition] = useState<Vector2>({ x: 0, y: 0 });
+  const translateX = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(0)).current;
   const directionRef = useRef<Vector2>(randomUnitVector());
   const positionRef = useRef<Vector2>({ x: 0, y: 0 });
+  const halfW = KEVIN_ENTITY_SIZE.width / 2;
+  const halfH = KEVIN_ENTITY_SIZE.height / 2;
+
+  const applyVisualPosition = (next: Vector2) => {
+    positionRef.current = next;
+    translateX.setValue(next.x - halfW);
+    translateY.setValue(next.y - halfH);
+  };
   const boundsRef = useRef<Bounds | null>(bounds);
   const canSpawnRef = useRef(canSpawn);
   const knockedPlantIdsRef = useRef<Set<string>>(new Set());
@@ -194,8 +204,6 @@ export function useKevin(bounds: Bounds | null, options: UseKevinOptions) {
 
   const boundsWidth = bounds?.width ?? 0;
   const boundsHeight = bounds?.height ?? 0;
-  const knastTopRatio = knastPlacement?.topRatio ?? 0;
-  const knastTopOffset = knastPlacement?.topOffset ?? 0;
 
   useEffect(() => {
     knockedPlantIdsRef.current = new Set();
@@ -221,10 +229,9 @@ export function useKevin(bounds: Bounds | null, options: UseKevinOptions) {
 
     spawnedForResetKeyRef.current = resetKey;
     const start = getKevinKnastSpawn(currentBounds, knastPlacement);
-    positionRef.current = start;
-    setPosition(start);
+    applyVisualPosition(start);
     directionRef.current = randomUnitVector();
-  }, [boundsHeight, boundsWidth, knastTopOffset, knastTopRatio, resetKey]);
+  }, [boundsHeight, boundsWidth, halfH, halfW, knastPlacement, resetKey]);
 
   useEffect(() => {
     if (!boundsRef.current || !active) {
@@ -233,7 +240,6 @@ export function useKevin(bounds: Bounds | null, options: UseKevinOptions) {
 
     let frameId = 0;
     let lastTime = performance.now();
-    let lastSyncTime = 0;
     let directionTimerMs = 0;
     let nextDirectionChangeMs = randomDirectionChangeMs() * directionChangeFactor;
     let spawnTimerMs = 0;
@@ -269,11 +275,7 @@ export function useKevin(bounds: Bounds | null, options: UseKevinOptions) {
         KEVIN_ENTITY_SIZE,
         { top: 16, bottom: 12, left: 12, right: 12 },
       );
-      positionRef.current = nextPosition;
-      if (shouldSyncPosition(lastSyncTime, now)) {
-        lastSyncTime = now;
-        setPosition(nextPosition);
-      }
+      applyVisualPosition(nextPosition);
 
       if (plantsRef?.current && onPlantKnockRef.current) {
         const timeSinceLastKnock = now - lastPlantKnockAtRef.current;
@@ -355,5 +357,10 @@ export function useKevin(bounds: Bounds | null, options: UseKevinOptions) {
     speed,
   ]);
 
-  return position;
+  return {
+    positionRef,
+    animatedStyle: {
+      transform: [{ translateX }, { translateY }],
+    },
+  } satisfies Pick<PlayerMovementResult, 'animatedStyle' | 'positionRef'>;
 }

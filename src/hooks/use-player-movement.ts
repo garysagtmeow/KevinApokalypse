@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Animated } from 'react-native';
 import type { RefObject } from 'react';
 
 import {
@@ -9,14 +10,19 @@ import {
   type EntitySize,
   type Vector2,
 } from '@/src/systems/movement';
-import {
-  IS_WEB,
-  WEB_IDLE_POLL_MS,
-  shouldSyncPosition,
-} from '@/src/utils/platform-performance';
+import { IS_WEB, WEB_IDLE_POLL_MS } from '@/src/utils/platform-performance';
 
 const DEFAULT_SPEED = 180;
 const MAX_DELTA_SECONDS = 0.05;
+const INTERACTION_SYNC_MS = IS_WEB ? 220 : 80;
+
+export type PlayerMovementResult = {
+  positionRef: RefObject<Vector2>;
+  interactionPoint: Vector2;
+  animatedStyle: {
+    transform: [{ translateX: Animated.Value }, { translateY: Animated.Value }];
+  };
+};
 
 type UsePlayerMovementOptions = {
   speed?: number;
@@ -29,13 +35,23 @@ export function usePlayerMovement(
   bounds: Bounds | null,
   directionRef: RefObject<Vector2>,
   options: UsePlayerMovementOptions = {},
-) {
+): PlayerMovementResult {
   const speed = options.speed ?? DEFAULT_SPEED;
   const entitySize = options.entitySize ?? { width: 80, height: 130 };
   const boundsInsets = options.boundsInsets ?? {};
   const resetKey = options.resetKey ?? 0;
-  const [position, setPosition] = useState<Vector2>({ x: 0, y: 0 });
+  const translateX = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(0)).current;
   const positionRef = useRef<Vector2>({ x: 0, y: 0 });
+  const [interactionPoint, setInteractionPoint] = useState<Vector2>({ x: 0, y: 0 });
+  const halfW = entitySize.width / 2;
+  const halfH = entitySize.height / 2;
+
+  const applyVisualPosition = (next: Vector2) => {
+    positionRef.current = next;
+    translateX.setValue(next.x - halfW);
+    translateY.setValue(next.y - halfH);
+  };
 
   useEffect(() => {
     if (!bounds) {
@@ -43,8 +59,20 @@ export function usePlayerMovement(
     }
 
     const start = { x: bounds.width / 2, y: bounds.height / 2 };
-    positionRef.current = start;
-    setPosition(start);
+    applyVisualPosition(start);
+    setInteractionPoint(start);
+  }, [bounds, halfH, halfW, resetKey]);
+
+  useEffect(() => {
+    if (!bounds) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setInteractionPoint({ ...positionRef.current });
+    }, INTERACTION_SYNC_MS);
+
+    return () => clearInterval(interval);
   }, [bounds, resetKey]);
 
   useEffect(() => {
@@ -55,15 +83,6 @@ export function usePlayerMovement(
     let frameId = 0;
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     let lastTime = performance.now();
-    let lastSyncTime = 0;
-
-    const syncPosition = (next: Vector2, now: number, force = false) => {
-      positionRef.current = next;
-      if (force || shouldSyncPosition(lastSyncTime, now)) {
-        lastSyncTime = now;
-        setPosition(next);
-      }
-    };
 
     const scheduleIdlePoll = () => {
       if (!IS_WEB) {
@@ -93,7 +112,7 @@ export function usePlayerMovement(
         entitySize,
         boundsInsets,
       );
-      syncPosition(next, now);
+      applyVisualPosition(next);
 
       frameId = requestAnimationFrame(tick);
     };
@@ -109,14 +128,18 @@ export function usePlayerMovement(
   }, [
     bounds,
     directionRef,
+    entitySize,
+    boundsInsets,
+    halfH,
+    halfW,
     speed,
-    entitySize.width,
-    entitySize.height,
-    boundsInsets.top,
-    boundsInsets.right,
-    boundsInsets.bottom,
-    boundsInsets.left,
   ]);
 
-  return position;
+  return {
+    positionRef,
+    interactionPoint,
+    animatedStyle: {
+      transform: [{ translateX }, { translateY }],
+    },
+  };
 }

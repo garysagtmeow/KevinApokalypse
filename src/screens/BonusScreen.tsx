@@ -103,12 +103,13 @@ export function BonusScreen() {
     setSessionKey((key) => key + 1);
   }, []);
 
-  const kevinPosition = usePlayerMovement(playAreaBounds, directionRef, {
-    entitySize: KEVIN_ENTITY_SIZE,
-    boundsInsets: KEVIN_BOUNDS_INSETS,
-    speed: KEVIN_BONUS_SPEED,
-    resetKey: sessionKey,
-  });
+  const { interactionPoint: kevinPosition, animatedStyle: kevinAnimatedStyle } =
+    usePlayerMovement(playAreaBounds, directionRef, {
+      entitySize: KEVIN_ENTITY_SIZE,
+      boundsInsets: KEVIN_BOUNDS_INSETS,
+      speed: KEVIN_BONUS_SPEED,
+      resetKey: sessionKey,
+    });
 
   useEffect(() => {
     if (!playAreaBounds || initializedRef.current === sessionKey) {
@@ -283,7 +284,7 @@ export function BonusScreen() {
         ))}
 
         {playAreaBounds && (
-          <Kevin position={kevinPosition} innocent={finished} />
+          <Kevin animatedStyle={kevinAnimatedStyle} innocent={finished} />
         )}
 
         {popups.map((popup) => (

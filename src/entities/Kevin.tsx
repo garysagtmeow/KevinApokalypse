@@ -1,8 +1,9 @@
 import { Image } from 'expo-image';
 import { memo } from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { Animated, Platform, StyleSheet, Text, View } from 'react-native';
 
 import { CHARACTER_VISUALS } from '@/src/entities/character-assets';
+import type { PlayerMovementResult } from '@/src/hooks/use-player-movement';
 import type { Vector2 } from '@/src/systems/movement';
 
 const KEVIN_VISUAL = CHARACTER_VISUALS.kevin;
@@ -10,22 +11,14 @@ const KEVIN_SIZE = { width: 82, height: 118 };
 const IS_WEB = Platform.OS === 'web';
 
 type KevinProps = {
-  position: Vector2;
+  position?: Vector2;
+  animatedStyle?: PlayerMovementResult['animatedStyle'];
   innocent?: boolean;
 };
 
-export const Kevin = memo(function Kevin({ position, innocent = false }: KevinProps) {
+function KevinVisual({ innocent = false }: { innocent?: boolean }) {
   return (
-    <View
-      style={[
-        styles.wrapper,
-        innocent && styles.wrapperInnocent,
-        IS_WEB && styles.wrapperWeb,
-        {
-          left: position.x - KEVIN_SIZE.width / 2,
-          top: position.y - KEVIN_SIZE.height / 2,
-        },
-      ]}>
+    <>
       <Image
         source={KEVIN_VISUAL.head}
         style={[styles.headImage, innocent && styles.headInnocent]}
@@ -37,6 +30,44 @@ export const Kevin = memo(function Kevin({ position, innocent = false }: KevinPr
         contentFit="contain"
       />
       {!innocent && <Text style={styles.label}>{KEVIN_VISUAL.label}</Text>}
+    </>
+  );
+}
+
+export const Kevin = memo(function Kevin({
+  position,
+  animatedStyle,
+  innocent = false,
+}: KevinProps) {
+  if (animatedStyle) {
+    return (
+      <Animated.View
+        style={[
+          styles.wrapper,
+          styles.positioned,
+          animatedStyle,
+          IS_WEB && styles.wrapperWeb,
+        ]}>
+        <View style={innocent ? styles.wrapperInnocent : undefined}>
+          <KevinVisual innocent={innocent} />
+        </View>
+      </Animated.View>
+    );
+  }
+
+  return (
+    <View
+      style={[
+        styles.wrapper,
+        styles.positioned,
+        innocent && styles.wrapperInnocent,
+        IS_WEB && styles.wrapperWeb,
+        position && {
+          left: position.x - KEVIN_SIZE.width / 2,
+          top: position.y - KEVIN_SIZE.height / 2,
+        },
+      ]}>
+      <KevinVisual innocent={innocent} />
     </View>
   );
 });
@@ -45,15 +76,17 @@ export const KEVIN_ENTITY_SIZE = KEVIN_SIZE;
 
 const styles = StyleSheet.create({
   wrapper: {
-    position: 'absolute',
     alignItems: 'center',
     width: KEVIN_SIZE.width,
     zIndex: 2,
     transform: [{ rotate: '-5deg' }],
   },
+  positioned: {
+    position: 'absolute',
+  },
   wrapperWeb: Platform.select({
     web: {
-      willChange: 'transform, left, top',
+      willChange: 'transform',
     } as object,
     default: {},
   }),
